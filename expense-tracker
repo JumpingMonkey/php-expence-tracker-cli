@@ -1,0 +1,83 @@
+#!/usr/bin/env php
+<?php
+
+require_once __DIR__ . '/src/ExpenseManager.php';
+
+$manager = new ExpenseManager();
+
+if ($argc < 2) {
+    echo "Usage: expense-tracker <command> [options]\n";
+    exit(1);
+}
+
+$command = $argv[1];
+$options = parseOptions(array_slice($argv, 2));
+
+try {
+    switch ($command) {
+        case 'add':
+            if (!isset($options['description']) || !isset($options['amount'])) {
+                throw new Exception("Both --description and --amount are required for add command");
+            }
+            $id = $manager->addExpense($options['description'], (float)$options['amount']);
+            echo "Expense added successfully (ID: $id)\n";
+            break;
+
+        case 'list':
+            $expenses = $manager->listExpenses();
+            if (empty($expenses)) {
+                echo "No expenses found\n";
+                break;
+            }
+            echo sprintf("%-4s %-10s %-20s %-10s\n", "ID", "Date", "Description", "Amount");
+            foreach ($expenses as $expense) {
+                echo sprintf("%-4d %-10s %-20s $%-10.2f\n",
+                    $expense['id'],
+                    $expense['date'],
+                    $expense['description'],
+                    $expense['amount']
+                );
+            }
+            break;
+
+        case 'delete':
+            if (!isset($options['id'])) {
+                throw new Exception("--id is required for delete command");
+            }
+            $manager->deleteExpense($options['id']);
+            echo "Expense deleted successfully\n";
+            break;
+
+        case 'summary':
+            if (isset($options['month'])) {
+                $total = $manager->getMonthlySummary($options['month']);
+                echo "Total expenses for " . date('F', mktime(0, 0, 0, $options['month'], 1)) . ": $" . number_format($total, 2) . "\n";
+            } else {
+                $total = $manager->getTotalExpenses();
+                echo "Total expenses: $" . number_format($total, 2) . "\n";
+            }
+            break;
+
+        default:
+            echo "Unknown command: $command\n";
+            exit(1);
+    }
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage() . "\n";
+    exit(1);
+}
+
+function parseOptions(array $args): array {
+    $options = [];
+    for ($i = 0; $i < count($args); $i++) {
+        if (strpos($args[$i], '--') === 0) {
+            $key = substr($args[$i], 2);
+            $value = $args[$i + 1] ?? null;
+            if ($value !== null && strpos($value, '--') !== 0) {
+                $options[$key] = $value;
+                $i++;
+            }
+        }
+    }
+    return $options;
+}
