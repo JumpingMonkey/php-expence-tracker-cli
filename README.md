@@ -69,3 +69,6 @@ exit
 ## Data Storage
 
 Expenses are stored in a JSON file located at `data/expenses.json`. The file is automatically created when you add your first expense.
+
+## Project URL
+[roadmap.sh PHP Expence Tracker Project](https://roadmap.sh/projects/expense-tracker)
